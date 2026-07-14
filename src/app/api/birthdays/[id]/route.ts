@@ -143,6 +143,7 @@ export async function PATCH(
     const updateData: Record<string, unknown> = {};
     if ('name' in validation.data) updateData.name = validation.data.name;
     if ('birthDate' in validation.data) updateData.birthDate = validation.data.birthDate;
+    if ('eventType' in validation.data) updateData.eventType = validation.data.eventType;
     if ('userId' in validation.data) updateData.userId = validation.data.userId || null;
     if ('giftIdeas' in validation.data) updateData.giftIdeas = validation.data.giftIdeas || null;
     if ('sendCardDaysBefore' in validation.data) updateData.sendCardDaysBefore = validation.data.sendCardDaysBefore;

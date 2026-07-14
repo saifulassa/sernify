@@ -156,6 +156,7 @@ export async function POST(request: NextRequest) {
       const {
         name,
         birthDate,
+        eventType,
         userId,
         giftIdeas,
         sendCardDaysBefore,
@@ -167,6 +168,7 @@ export async function POST(request: NextRequest) {
         .values({
           name,
           birthDate,
+          eventType,
           userId: userId || null,
           giftIdeas: giftIdeas || null,
           sendCardDaysBefore: sendCardDaysBefore || 7,

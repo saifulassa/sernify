@@ -1,0 +1,142 @@
+import { NextRequest, NextResponse } from 'next/server';
+import { db } from '@/lib/db/client';
+import { shoppingListSources } from '@/lib/db/schema';
+import { eq } from 'drizzle-orm';
+import { requireAuth, requireRole } from '@/lib/auth';
+import { invalidateEntity } from '@/lib/cache/cacheKeys';
+import { logActivity } from '@/lib/services/auditLog';
+import { logError } from '@/lib/utils/logError';
+
+interface RouteParams {
+  params: Promise<{ id: string }>;
+}
+
+export async function DELETE(
+  request: NextRequest,
+  { params }: RouteParams
+) {
+  const auth = await requireAuth();
+  if (auth instanceof NextResponse) return auth;
+
+  const forbidden = requireRole(auth, 'canManageIntegrations');
+  if (forbidden) return forbidden;
+
+  const { id } = await params;
+
+  try {
+    const [source] = await db
+      .select()
+      .from(shoppingListSources)
+      .where(eq(shoppingListSources.id, id));
+
+    if (!source) {
+      return NextResponse.json(
+        { error: 'Shopping list source not found' },
+        { status: 404 }
+      );
+    }
+
+    await db
+      .delete(shoppingListSources)
+      .where(eq(shoppingListSources.id, id));
+
+    await invalidateEntity('shopping-list-sources');
+    await invalidateEntity('shopping-lists');
+
+    logActivity({
+      userId: auth.userId,
+      action: 'delete',
+      entityType: 'integration',
+      entityId: source.id,
+      summary: `Deleted shopping list source: ${source.provider} (${source.externalListName || source.externalListId})`,
+    });
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    logError('Error deleting shopping list source:', error);
+    return NextResponse.json(
+      { error: 'Failed to delete shopping list source' },
+      { status: 500 }
+    );
+  }
+}
+
+export async function PATCH(
+  request: NextRequest,
+  { params }: RouteParams
+) {
+  const auth = await requireAuth();
+  if (auth instanceof NextResponse) return auth;
+
+  const forbidden = requireRole(auth, 'canManageIntegrations');
+  if (forbidden) return forbidden;
+
+  const { id } = await params;
+
+  try {
+    const body = await request.json();
+
+    const [source] = await db
+      .select()
+      .from(shoppingListSources)
+      .where(eq(shoppingListSources.id, id));
+
+    if (!source) {
+      return NextResponse.json(
+        { error: 'Shopping list source not found' },
+        { status: 404 }
+      );
+    }
+
+    const updates: Record<string, unknown> = {
+      updatedAt: new Date(),
+    };
+
+    if (typeof body.syncEnabled === 'boolean') {
+      updates.syncEnabled = body.syncEnabled;
+    }
+
+    if (body.externalListName !== undefined) {
+      updates.externalListName = body.externalListName;
+    }
+
+    const [updated] = await db
+      .update(shoppingListSources)
+      .set(updates)
+      .where(eq(shoppingListSources.id, id))
+      .returning();
+
+    if (!updated) {
+      return NextResponse.json({ error: 'Failed to update shopping list source' }, { status: 500 });
+    }
+
+    await invalidateEntity('shopping-list-sources');
+
+    logActivity({
+      userId: auth.userId,
+      action: 'update',
+      entityType: 'integration',
+      entityId: updated.id,
+      summary: `Updated shopping list source: ${updated.provider} (${updated.externalListName || updated.externalListId})`,
+    });
+
+    return NextResponse.json({
+      id: updated.id,
+      userId: updated.userId,
+      provider: updated.provider,
+      externalListId: updated.externalListId,
+      externalListName: updated.externalListName,
+      shoppingListId: updated.shoppingListId,
+      syncEnabled: updated.syncEnabled,
+      lastSyncAt: updated.lastSyncAt,
+      lastSyncError: updated.lastSyncError,
+      createdAt: updated.createdAt,
+    });
+  } catch (error) {
+    logError('Error updating shopping list source:', error);
+    return NextResponse.json(
+      { error: 'Failed to update shopping list source' },
+      { status: 500 }
+    );
+  }
+}

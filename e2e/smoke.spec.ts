@@ -1,0 +1,53 @@
+import { test, expect } from '@playwright/test';
+
+test.describe('Smoke Tests', () => {
+  test('homepage loads', async ({ page }) => {
+    await page.goto('/');
+    // Wait for the page to be interactive
+    await expect(page.locator('main').first()).toBeVisible();
+  });
+
+  test('navigation sidebar is visible', async ({ page }) => {
+    await page.goto('/');
+    // The sidebar/nav should be present
+    const sidebar = page.locator('nav');
+    await expect(sidebar).toBeVisible();
+  });
+});
+
+test.describe('API Health', () => {
+  test('health endpoint returns ok', async ({ request }) => {
+    const response = await request.get('/api/health');
+    expect(response.ok()).toBe(true);
+
+    const data = await response.json();
+    expect(data.status).toBe('ok');
+  });
+
+  test('family endpoint returns data', async ({ request }) => {
+    const response = await request.get('/api/family');
+    expect(response.ok()).toBe(true);
+
+    const data = await response.json();
+    expect(data).toHaveProperty('members');
+    expect(Array.isArray(data.members)).toBe(true);
+  });
+
+  test('tasks endpoint returns data', async ({ request }) => {
+    const response = await request.get('/api/tasks');
+    expect(response.ok()).toBe(true);
+
+    const data = await response.json();
+    expect(data).toHaveProperty('tasks');
+    expect(Array.isArray(data.tasks)).toBe(true);
+  });
+
+  test('chores endpoint returns data', async ({ request }) => {
+    const response = await request.get('/api/chores');
+    expect(response.ok()).toBe(true);
+
+    const data = await response.json();
+    expect(data).toHaveProperty('chores');
+    expect(Array.isArray(data.chores)).toBe(true);
+  });
+});

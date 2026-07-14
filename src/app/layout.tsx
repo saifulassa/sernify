@@ -1,0 +1,281 @@
+/**
+ *
+ * This is the root layout that wraps every page in the application.
+ * Think of it as the HTML "shell" that contains all your pages.
+ *
+ * IT INCLUDES:
+ * - HTML document structure (<html>, <head>, <body>)
+ * - Global styles and fonts
+ * - Theme provider (for dark/light mode)
+ * - Metadata (title, description, etc.)
+ *
+ * HOW NEXT.JS LAYOUTS WORK:
+ * In Next.js App Router, layouts wrap pages and persist across navigation.
+ * This means the layout doesn't re-render when you navigate between pages,
+ * making navigation feel instant and smooth.
+ *
+ * Layout Hierarchy:
+ *   layout.tsx (this file - root)
+ *     └── page.tsx (home page)
+ *     └── calendar/
+ *         └── layout.tsx (optional nested layout)
+ *         └── page.tsx (calendar page)
+ *
+ * WHEN TO EDIT THIS FILE:
+ * - Adding global providers (auth, theme, etc.)
+ * - Changing fonts
+ * - Updating site metadata
+ * - Adding global UI elements (navigation that appears on every page)
+ *
+ */
+
+// Import global styles (including Tailwind CSS)
+import '@/styles/globals.css';
+
+// Bundle a color emoji webfont so emoji (🎯 🎂 🛒 🏆 …) render even on clients
+// with no system emoji font — e.g. a bare Raspberry Pi OS / minimal Chromium
+// kiosk. Subsetted by unicode-range, so a browser only downloads the small
+// chunks for the emoji actually on screen, not the whole font. See #145.
+import '@fontsource/noto-color-emoji/index.css';
+
+// Next.js types for metadata
+import type { Metadata, Viewport } from 'next';
+
+// Inter font from Google Fonts (loaded by Next.js for performance)
+// Next.js automatically optimizes font loading to prevent layout shift
+import { Inter } from 'next/font/google';
+
+// Providers (theme, auth, etc.)
+import { Providers } from '@/components/providers';
+
+// Error boundary
+import { ErrorBoundary } from '@/components/ErrorBoundary';
+
+// Lazy-load overlays — these are rarely needed on first paint and pull in
+// heavy dependencies (Screensaver imports WIDGET_REGISTRY + useDashboardData).
+import { LazyOverlays } from '@/components/layout/LazyOverlays';
+import { DemoBanner } from '@/components/layout/DemoBanner';
+
+// Toast notifications
+import { Toaster } from '@/components/ui/toaster';
+
+
+/**
+ * FONT CONFIGURATION
+ * We use Inter, a highly readable sans-serif font designed for screens.
+ *
+ * Configuration options:
+ * - subsets: Which character sets to include (latin for English)
+ * - variable: CSS variable name for using the font in Tailwind
+ * - display: 'swap' shows fallback font immediately, then swaps when loaded
+ *
+ * WHY INTER:
+ * - Designed specifically for computer screens
+ * - Excellent readability at all sizes
+ * - Open source and free to use
+ * - Supports many languages
+ */
+const inter = Inter({
+  subsets: ['latin'],
+  variable: '--font-inter',
+  display: 'swap',
+});
+
+
+/**
+ * METADATA
+ * Defines information about the website shown in browser tabs, search results,
+ * and when sharing links on social media.
+ *
+ * This metadata is static - it's the same for all pages.
+ * For page-specific metadata, add a metadata export in each page.tsx file.
+ *
+ * WHAT EACH FIELD DOES:
+ * - title: Browser tab title (and <title> tag)
+ * - description: Shown in search results and social shares
+ * - keywords: Help search engines understand your content
+ * - authors: Who created this site
+ * - manifest: Links to PWA manifest for "Add to Home Screen"
+ * - icons: Favicon and app icons
+ */
+export const metadata: Metadata = {
+  // Title configuration
+  // 'default' is used when no page-specific title
+  // 'template' is used with page titles: "Calendar | Prism"
+  title: {
+    default: 'Sernify - Family Dashboard',
+    template: '%s | Sernify',
+  },
+
+  // Description for search engines and social sharing
+  description:
+    'Sernify is a self-hosted family dashboard. Sync calendars, manage chores, plan meals, and stay organized—without giving your data to commercial services.',
+
+  // Keywords for SEO
+  keywords: [
+    'family dashboard',
+    'home calendar',
+    'family organization',
+    'chore tracking',
+    'meal planning',
+    'smart home display',
+    'touchscreen calendar',
+  ],
+
+  // Author information
+  authors: [{ name: 'Sernify Community' }],
+
+  // App name (used when added to home screen)
+  applicationName: 'Sernify',
+
+  // Generator (what built this site)
+  generator: 'Next.js',
+
+  // Robots directive (allow search engines to index)
+  robots: {
+    index: true,
+    follow: true,
+  },
+
+  // PWA manifest
+  manifest: '/manifest.json',
+
+  // Icons configuration
+  icons: {
+    icon: [
+      { url: '/icons/icon.svg', type: 'image/svg+xml' },
+      { url: '/icons/icon-192.png', type: 'image/png', sizes: '192x192' },
+    ],
+    apple: '/icons/apple-touch-icon.png',
+  },
+
+  // Open Graph metadata (for social sharing on Facebook, LinkedIn, etc.)
+  openGraph: {
+    type: 'website',
+    locale: 'en_US',
+    siteName: 'Sernify',
+    title: 'Sernify - Family Dashboard',
+    description: 'Your family\'s digital home',
+  },
+
+  // Twitter Card metadata (for Twitter/X sharing)
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Sernify - Family Dashboard',
+    description: 'Your family\'s digital home',
+  },
+};
+
+
+/**
+ * VIEWPORT CONFIGURATION
+ * Controls how the page is displayed on different devices.
+ *
+ * These settings are important for:
+ * - Mobile responsiveness
+ * - Touch screen interaction
+ * - Preventing unwanted zoom/scroll behaviors
+ *
+ * SERNIFY-SPECIFIC CONSIDERATIONS:
+ * - Primary display is a 1920x1080 touchscreen
+ * - We disable user scaling to prevent accidental zoom
+ * - Theme color affects browser chrome on mobile
+ */
+export const viewport: Viewport = {
+  // Width equals device width (responsive)
+  width: 'device-width',
+
+  // Initial zoom level (1 = 100%)
+  initialScale: 1,
+
+  // Allow pinch-to-zoom for accessibility (WCAG requirement)
+  maximumScale: 5,
+  userScalable: true,
+
+  // Viewport fit cover for iOS safe area handling
+  // This allows content to extend into the safe area (notch, home indicator)
+  // Use env(safe-area-inset-*) in CSS to add proper padding
+  viewportFit: 'cover',
+
+  // Theme color for browser chrome (status bar, etc.)
+  // This changes based on system theme
+  themeColor: [
+    { media: '(prefers-color-scheme: light)', color: '#ffffff' },
+    { media: '(prefers-color-scheme: dark)', color: '#0d1117' },
+  ],
+};
+
+
+/**
+ * ROOT LAYOUT COMPONENT
+ * The main layout component that wraps all pages.
+ *
+ * PROPS:
+ * - children: The page content (automatically provided by Next.js)
+ *
+ * STRUCTURE:
+ * <html>
+ *   <body>
+ *     {children} <- Your page content goes here
+ *   </body>
+ * </html>
+ *
+ * IMPORTANT NOTES:
+ * - This is a Server Component (runs on the server)
+ * - Can't use hooks or browser APIs directly
+ * - For client-side features, wrap in a Client Component
+ */
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return (
+    <html
+      lang="en"
+      // Suppress hydration warnings from browser extensions
+      // that might modify the HTML (password managers, etc.)
+      suppressHydrationWarning
+    >
+      {/*
+        The body element with our font applied.
+
+        CLASSES EXPLAINED:
+        - inter.variable: Adds CSS variable for Inter font
+        - font-sans: Uses our sans-serif font stack
+        - antialiased: Smooth font rendering
+        - bg-background: Background color from theme
+        - text-foreground: Text color from theme
+        - min-h-screen: At least full viewport height
+        - overflow-hidden: Prevent scrolling (dashboard fills screen)
+
+        NOTE: overflow-hidden is specific to our kiosk-style dashboard.
+        Remove this if you want pages to scroll.
+      */}
+      <body
+        className={`
+          ${inter.variable}
+          font-sans
+          antialiased
+          bg-background
+          text-foreground
+          min-h-screen
+          md:overflow-hidden
+        `}
+      >
+        {/*
+          PROVIDERS
+          Wrap children with application providers (theme, auth, etc.)
+        */}
+        <ErrorBoundary>
+          <Providers>
+            <DemoBanner />
+            {children}
+            <LazyOverlays />
+            <Toaster />
+          </Providers>
+        </ErrorBoundary>
+      </body>
+    </html>
+  );
+}

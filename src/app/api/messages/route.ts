@@ -1,0 +1,288 @@
+/**
+ *
+ * Handles HTTP requests for family message board operations.
+ * Messages are short notes that family members can post for everyone to see.
+ *
+ * ENDPOINT: /api/messages
+ * - GET:  List all messages (with optional filters)
+ * - POST: Create a new message
+ *
+ * USE CASES:
+ * - "Dad at gym, back at 9am"
+ * - "Swim practice canceled today"
+ * - "Dinner is in the fridge"
+ *
+ */
+
+import { NextRequest, NextResponse } from 'next/server';
+import { getDisplayAuth } from '@/lib/auth';
+import { withAuth } from '@/lib/api/withAuth';
+import { db } from '@/lib/db/client';
+import { familyMessages, users } from '@/lib/db/schema';
+import { eq, desc, asc, and, gt, isNull, or, sql } from 'drizzle-orm';
+import { formatMessageRow } from '@/lib/utils/formatters';
+import { getCached } from '@/lib/cache/redis';
+import { invalidateEntity } from '@/lib/cache/cacheKeys';
+import { logActivity } from '@/lib/services/auditLog';
+import { logError } from '@/lib/utils/logError';
+
+
+/**
+ * GET /api/messages
+ * Lists all family messages.
+ *
+ * QUERY PARAMETERS:
+ * - authorId:     Filter by author user ID
+ * - pinned:       Filter by pinned status ("true" or "false")
+ * - important:    Filter by important status ("true" or "false")
+ * - includeExpired: Include expired messages ("true", default: "false")
+ * - limit:        Maximum messages to return (default: 20)
+ * - offset:       Pagination offset
+ *
+ * SORTING:
+ * Messages are sorted by:
+ * 1. Pinned messages first
+ * 2. Then by creation date (newest first)
+ *
+ * RESPONSE:
+ * {
+ *   messages: MessageResponse[],
+ *   total: number,
+ *   limit: number,
+ *   offset: number
+ * }
+ */
+export async function GET(request: NextRequest) {
+  const auth = await getDisplayAuth();
+  if (!auth) {
+    return NextResponse.json({ messages: [], total: 0, limit: 20, offset: 0 });
+  }
+
+  try {
+    const { searchParams } = new URL(request.url);
+    const authorId = searchParams.get('authorId');
+    const pinned = searchParams.get('pinned');
+    const important = searchParams.get('important');
+    const includeExpired = searchParams.get('includeExpired') === 'true';
+    const limit = Math.min(parseInt(searchParams.get('limit') || '20'), 100);
+    const offset = parseInt(searchParams.get('offset') || '0');
+
+    const cacheKey = `messages:${authorId ?? 'all'}:${pinned ?? 'any'}:${important ?? 'any'}:${includeExpired}:${limit}:${offset}`;
+
+    const result = await getCached(cacheKey, async () => {
+      // Build filter conditions
+      const conditions = [];
+
+      if (authorId) {
+        conditions.push(eq(familyMessages.authorId, authorId));
+      }
+
+      if (pinned !== null) {
+        conditions.push(eq(familyMessages.pinned, pinned === 'true'));
+      }
+
+      if (important !== null) {
+        conditions.push(eq(familyMessages.important, important === 'true'));
+      }
+
+      // By default, exclude expired messages
+      // A message is not expired if: expiresAt is null OR expiresAt > now
+      if (!includeExpired) {
+        conditions.push(
+          or(
+            isNull(familyMessages.expiresAt),
+            gt(familyMessages.expiresAt, new Date())
+          )
+        );
+      }
+
+      // Execute query with joins
+      // Sort by pinned (desc so true comes first), then by createdAt (desc)
+      const results = await db
+        .select({
+          id: familyMessages.id,
+          message: familyMessages.message,
+          pinned: familyMessages.pinned,
+          important: familyMessages.important,
+          expiresAt: familyMessages.expiresAt,
+          createdAt: familyMessages.createdAt,
+          authorId: users.id,
+          authorName: users.name,
+          authorColor: users.color,
+          authorAvatar: users.avatarUrl,
+        })
+        .from(familyMessages)
+        .innerJoin(users, eq(familyMessages.authorId, users.id))
+        .where(conditions.length > 0 ? and(...conditions) : undefined)
+        .orderBy(desc(familyMessages.pinned), desc(familyMessages.createdAt))
+        .limit(limit)
+        .offset(offset);
+
+      const formattedMessages = results.map((row) => formatMessageRow(row));
+
+      const countResult = await db
+        .select({ count: sql<number>`count(*)` })
+        .from(familyMessages)
+        .where(conditions.length > 0 ? and(...conditions) : undefined);
+
+      return {
+        messages: formattedMessages,
+        total: Number(countResult[0]?.count ?? 0),
+        limit,
+        offset,
+      };
+    }, 60);
+
+    return NextResponse.json(result);
+  } catch (error) {
+    logError('Error fetching messages:', error);
+    return NextResponse.json(
+      { error: 'Failed to fetch messages' },
+      { status: 500 }
+    );
+  }
+}
+
+
+/**
+ * POST /api/messages
+ * Creates a new family message.
+ *
+ * REQUEST BODY:
+ * {
+ *   message: string (required) - The message content
+ *   authorId: string (required) - User ID of the author
+ *   pinned?: boolean (default: false) - Pin to top of board
+ *   important?: boolean (default: false) - Mark as important/urgent
+ *   expiresAt?: string - ISO date when message should auto-delete
+ * }
+ *
+ * RESPONSE:
+ * - 201: Message created successfully
+ * - 400: Invalid request body
+ * - 500: Server error
+ *
+ * EXAMPLE:
+ * POST /api/messages
+ * {
+ *   "message": "Swim practice canceled today",
+ *   "authorId": "user-uuid",
+ *   "important": true
+ * }
+ */
+export async function POST(request: NextRequest) {
+  return withAuth(async () => {
+    try {
+    const body = await request.json();
+
+    // Validate required fields
+    if (!body.message || typeof body.message !== 'string') {
+      return NextResponse.json(
+        { error: 'Message content is required' },
+        { status: 400 }
+      );
+    }
+
+    if (!body.authorId || typeof body.authorId !== 'string') {
+      return NextResponse.json(
+        { error: 'Author ID is required' },
+        { status: 400 }
+      );
+    }
+
+    // Verify author exists
+    const [author] = await db
+      .select({ id: users.id })
+      .from(users)
+      .where(eq(users.id, body.authorId));
+
+    if (!author) {
+      return NextResponse.json(
+        { error: 'Author not found' },
+        { status: 400 }
+      );
+    }
+
+    // Validate expiresAt if provided
+    let expiresAt: Date | null = null;
+    if (body.expiresAt) {
+      expiresAt = new Date(body.expiresAt);
+      if (isNaN(expiresAt.getTime())) {
+        return NextResponse.json(
+          { error: 'Invalid expiresAt format. Use ISO 8601 format.' },
+          { status: 400 }
+        );
+      }
+      // Ensure expiration is in the future
+      if (expiresAt <= new Date()) {
+        return NextResponse.json(
+          { error: 'expiresAt must be in the future' },
+          { status: 400 }
+        );
+      }
+    }
+
+    // Insert the new message
+    const [newMessage] = await db
+      .insert(familyMessages)
+      .values({
+        message: body.message.trim(),
+        authorId: body.authorId,
+        pinned: Boolean(body.pinned),
+        important: Boolean(body.important),
+        expiresAt: expiresAt,
+      })
+      .returning();
+
+    if (!newMessage) {
+      return NextResponse.json(
+        { error: 'Failed to create message' },
+        { status: 500 }
+      );
+    }
+
+    // Fetch with author data
+    const [messageWithAuthor] = await db
+      .select({
+        id: familyMessages.id,
+        message: familyMessages.message,
+        pinned: familyMessages.pinned,
+        important: familyMessages.important,
+        expiresAt: familyMessages.expiresAt,
+        createdAt: familyMessages.createdAt,
+        authorId: users.id,
+        authorName: users.name,
+        authorColor: users.color,
+        authorAvatar: users.avatarUrl,
+      })
+      .from(familyMessages)
+      .innerJoin(users, eq(familyMessages.authorId, users.id))
+      .where(eq(familyMessages.id, newMessage.id));
+
+    if (!messageWithAuthor) {
+      return NextResponse.json(
+        { error: 'Message created but could not be retrieved' },
+        { status: 500 }
+      );
+    }
+
+    await invalidateEntity('messages');
+
+    logActivity({
+      userId: body.authorId,
+      action: 'create',
+      entityType: 'message',
+      entityId: newMessage.id,
+      summary: 'Posted message',
+    });
+
+    return NextResponse.json(formatMessageRow(messageWithAuthor), { status: 201 });
+    } catch (error) {
+      logError('Error creating message:', error);
+      return NextResponse.json(
+        { error: 'Failed to create message' },
+        { status: 500 }
+      );
+    }
+  }, { rateLimit: { feature: 'messages', limit: 30, windowSeconds: 60 } });
+}

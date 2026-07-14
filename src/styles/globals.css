@@ -1,0 +1,342 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* GitHub Dark default — always dark */
+    --background: 215 28% 7%;
+    --foreground: 210 12% 83%;
+
+    --card: 212 26% 11%;
+    --card-foreground: 210 12% 83%;
+
+    --popover: 212 26% 11%;
+    --popover-foreground: 210 12% 83%;
+
+    --primary: 212 92% 54%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 214 16% 17%;
+    --secondary-foreground: 210 12% 83%;
+
+    --muted: 214 16% 17%;
+    --muted-foreground: 213 8% 45%;
+
+    --accent: 214 16% 17%;
+    --accent-foreground: 210 12% 83%;
+
+    --destructive: 0 69% 47%;
+    --destructive-foreground: 0 0% 100%;
+
+    --success: 137 56% 46%;
+    --success-foreground: 0 0% 100%;
+
+    --warning: 38 92% 46%;
+    --warning-foreground: 0 0% 100%;
+
+    --border: 213 14% 21%;
+    --input: 213 14% 21%;
+    --ring: 212 92% 54%;
+
+    --radius: 0.375rem;
+
+    --chart-1: 212 92% 54%;
+    --chart-2: 137 56% 46%;
+    --chart-3: 38 92% 46%;
+    --chart-4: 276 58% 50%;
+    --chart-5: 349 71% 52%;
+
+    --seasonal-accent: 212 92% 54%;
+    --seasonal-accent-foreground: 0 0% 100%;
+    --seasonal-highlight: 214 16% 17%;
+    --seasonal-subtle: 215 28% 7%;
+  }
+
+  /* No .dark class — always dark */
+  * {
+    @apply border-border;
+  }
+
+  html {
+    font-size: 16px;
+  }
+
+  @media (pointer: fine) {
+    html {
+      font-size: 14px;
+    }
+  }
+
+  @media (min-width: 768px) and (pointer: coarse) {
+    html {
+      font-size: 18px;
+    }
+  }
+
+  @media (min-width: 1024px) and (pointer: coarse) {
+    html {
+      font-size: 20px;
+    }
+  }
+
+  @media (min-width: 1400px) and (pointer: coarse) {
+    html {
+      font-size: 22px;
+    }
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  *:focus {
+    @apply outline-none;
+  }
+
+  *:focus-visible {
+    @apply ring-2 ring-ring ring-offset-2 ring-offset-background;
+  }
+
+  ::-webkit-scrollbar {
+    @apply w-2 h-2;
+  }
+
+  ::-webkit-scrollbar-track {
+    @apply bg-transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    @apply bg-muted-foreground/30 rounded-full;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-muted-foreground/50;
+  }
+
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: hsl(var(--muted-foreground) / 0.3) transparent;
+  }
+
+  button,
+  [role="button"],
+  [role="tab"],
+  [role="switch"] {
+    -webkit-user-select: none;
+    user-select: none;
+  }
+
+  a,
+  button,
+  [role="button"] {
+    touch-action: manipulation;
+  }
+
+  * {
+    -webkit-tap-highlight-color: transparent;
+  }
+}
+
+@layer utilities {
+  .touch-target {
+    @apply min-h-[32px] min-w-[32px];
+  }
+
+  .touch-target-lg {
+    @apply min-h-[36px] min-w-[36px];
+  }
+
+  .touch-target-xl {
+    @apply min-h-[44px] min-w-[44px];
+  }
+
+  @media (pointer: coarse) {
+    .touch-target {
+      @apply min-h-[44px] min-w-[44px];
+    }
+
+    .touch-target-lg {
+      @apply min-h-[48px] min-w-[48px];
+    }
+
+    .touch-target-xl {
+      @apply min-h-[60px] min-w-[60px];
+    }
+  }
+
+  .text-truncate {
+    @apply truncate;
+  }
+
+  .text-clamp-2 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .text-clamp-3 {
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .full-screen {
+    @apply min-h-screen w-full;
+  }
+
+  .center {
+    @apply flex items-center justify-center;
+  }
+
+  .stack {
+    @apply flex flex-col gap-4;
+  }
+
+  .row {
+    @apply flex flex-row items-center gap-4;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+
+  .no-animations * {
+    animation: none !important;
+    transition: none !important;
+  }
+
+  html.performance-mode .backdrop-blur,
+  html.performance-mode .backdrop-blur-sm,
+  html.performance-mode .backdrop-blur-md,
+  html.performance-mode .backdrop-blur-lg,
+  html.performance-mode .backdrop-blur-xl,
+  html.performance-mode .backdrop-blur-2xl,
+  html.performance-mode .backdrop-blur-3xl {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
+}
+
+@keyframes cart-ride {
+  0% { left: -150px; top: 50%; transform: translateY(-50%) rotate(-5deg); }
+  20% { transform: translateY(-50%) rotate(5deg); }
+  40% { transform: translateY(-50%) rotate(-5deg); }
+  60% { transform: translateY(-50%) rotate(5deg); }
+  80% { transform: translateY(-50%) rotate(-3deg); }
+  100% { left: 110%; top: 50%; transform: translateY(-50%) rotate(0deg); }
+}
+
+@keyframes exhaust {
+  0% { opacity: 1; transform: translateX(0) scale(1); }
+  100% { opacity: 0; transform: translateX(-40px) scale(0.5); }
+}
+
+@keyframes confetti-fall {
+  0% { top: -10%; opacity: 1; transform: rotate(0deg) translateX(0); }
+  100% { top: 110%; opacity: 0.5; transform: rotate(720deg) translateX(50px); }
+}
+
+@keyframes bounce-in {
+  0% { opacity: 0; transform: translate(-50%, -50%) scale(0.3); }
+  50% { transform: translate(-50%, -50%) scale(1.1); }
+  70% { transform: translate(-50%, -50%) scale(0.9); }
+  100% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+}
+
+.animate-cart-ride { animation: cart-ride 2.5s ease-in-out forwards; }
+.animate-exhaust { animation: exhaust 0.4s ease-out infinite; }
+.animate-confetti-fall { animation: confetti-fall 2.5s ease-out forwards; }
+.animate-bounce-in { animation: bounce-in 0.6s ease-out forwards; }
+
+@keyframes plane-fly {
+  0% { transform: translate(-150%, 30vh); }
+  40% { transform: translate(30vw, 28vh); }
+  60% { transform: translate(55vw, 26vh); }
+  100% { transform: translate(120vw, 22vh); }
+}
+
+@keyframes spin-fast {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes rope-wave {
+  0%, 100% { d: path("M0 10 Q10 5 20 10 Q30 15 40 10"); }
+  50% { d: path("M0 10 Q10 15 20 10 Q30 5 40 10"); }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+
+.animate-plane-fly { animation: plane-fly 5s ease-in-out forwards; }
+.animate-spin-fast { animation: spin-fast 0.1s linear infinite; }
+.animate-rope-wave { animation: rope-wave 0.5s ease-in-out infinite; }
+.animate-float { animation: float 3s ease-in-out infinite; }
+
+@keyframes wiggle {
+  0%, 100% { transform: rotate(-3deg); }
+  50% { transform: rotate(3deg); }
+}
+
+.animate-wiggle { animation: wiggle 1.5s ease-in-out infinite; }
+
+.react-grid-item { overflow: visible !important; }
+
+.react-resizable-handle {
+  position: absolute; z-index: 20; opacity: 0; transition: opacity 0.15s;
+}
+@media (pointer: coarse) { .react-resizable-handle { opacity: 0.7; } }
+
+.react-grid-item:hover > .react-resizable-handle,
+.react-grid-item.resizing > .react-resizable-handle,
+.react-grid-item:active > .react-resizable-handle { opacity: 1; }
+
+.editing-mode .react-resizable-handle { opacity: 0.6; }
+.editing-mode .react-grid-item:hover > .react-resizable-handle,
+.editing-mode .react-grid-item.resizing > .react-resizable-handle,
+.editing-mode .react-grid-item:active > .react-resizable-handle { opacity: 1; }
+
+.react-resizable-handle-n { top: -22px; left: 24px; right: 24px; height: 44px; cursor: n-resize; }
+.react-resizable-handle-s { bottom: -22px; left: 24px; right: 24px; height: 44px; cursor: s-resize; }
+.react-resizable-handle-e { right: -22px; top: 24px; bottom: 24px; width: 44px; cursor: e-resize; }
+.react-resizable-handle-w { left: -22px; top: 24px; bottom: 24px; width: 44px; cursor: w-resize; }
+.react-resizable-handle-ne { top: -20px; right: -20px; width: 48px; height: 48px; cursor: ne-resize; }
+.react-resizable-handle-nw { top: -20px; left: -20px; width: 48px; height: 48px; cursor: nw-resize; }
+.react-resizable-handle-se { bottom: -20px; right: -20px; width: 48px; height: 48px; cursor: se-resize; }
+.react-resizable-handle-sw { bottom: -20px; left: -20px; width: 48px; height: 48px; cursor: sw-resize; }
+
+.react-resizable-handle::after {
+  content: ''; position: absolute; background: hsl(var(--primary)); border-radius: 4px;
+}
+.react-resizable-handle-n::after,
+.react-resizable-handle-s::after {
+  left: 50%; transform: translateX(-50%); width: 56px; height: 6px; top: 50%; margin-top: -3px;
+}
+.react-resizable-handle-e::after,
+.react-resizable-handle-w::after {
+  top: 50%; transform: translateY(-50%); width: 6px; height: 56px; left: 50%; margin-left: -3px;
+}
+.react-resizable-handle-ne::after,
+.react-resizable-handle-nw::after,
+.react-resizable-handle-se::after,
+.react-resizable-handle-sw::after {
+  width: 18px; height: 18px; border-radius: 50%; top: 50%; left: 50%;
+  transform: translate(-50%, -50%); box-shadow: 0 0 0 2px white;
+}
+
+.safe-area-bottom { padding-bottom: env(safe-area-inset-bottom, 0px); }

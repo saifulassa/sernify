@@ -40,7 +40,7 @@ const ThemeContext = createContext<ThemeContextValue | undefined>(undefined);
 /**
  * Storage key for persisting theme preference
  */
-const STORAGE_KEY = 'prism-theme';
+const STORAGE_KEY = 'sernify-theme';
 
 /**
  * Get the system theme preference

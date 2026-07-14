@@ -14,7 +14,9 @@ services:
       - sernify-network
 
   app:
-    image: ghcr.io/sandydargoport/prism:latest
+    build:
+      context: .
+      dockerfile: Dockerfile
     container_name: sernify-app
     ports:
       - "4003:3000"

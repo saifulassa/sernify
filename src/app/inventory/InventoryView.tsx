@@ -8,7 +8,7 @@ export function InventoryView() {
     <PageWrapper>
       <div className="p-4">
         <h1 className="text-2xl font-bold mb-4">Stock</h1>
-        <InventoryWidget />
+        <InventoryWidget fullPage />
       </div>
     </PageWrapper>
   );

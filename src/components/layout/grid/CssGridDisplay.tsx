@@ -45,7 +45,7 @@ export function CssGridDisplay({
   return (
     <div
       ref={containerRef}
-      className={`relative overflow-hidden ${className || ''}`}
+      className={`relative overflow-y-auto ${className || ''}`}
       style={{ height: containerHeight }}
     >
       <div

@@ -15,6 +15,7 @@ const PointsWidget = lazy(() => import('./PointsWidget').then(m => ({ default: m
 const WishesWidget = lazy(() => import('./WishesWidget').then(m => ({ default: m.WishesWidget })));
 const BusTrackingWidget = lazy(() => import('./BusTrackingWidget').then(m => ({ default: m.BusTrackingWidget })));
 const TravelWidget = lazy(() => import('./TravelWidget').then(m => ({ default: m.TravelWidget })));
+const InventoryWidget = lazy(() => import('./InventoryWidget').then(m => ({ default: m.InventoryWidget })));
 
 export interface WidgetProps {
   className?: string;
@@ -166,6 +167,15 @@ export const WIDGET_REGISTRY: Record<string, WidgetRegistryEntry> = {
     defaultW: 12,
     defaultH: 20,
   },
+  inventory: {
+    component: InventoryWidget,
+    label: 'Stock',
+    icon: 'Package',
+    minW: 8,
+    minH: 12,
+    defaultW: 12,
+    defaultH: 24,
+  },
 };
 
 export const ALL_WIDGET_TYPES = Object.keys(WIDGET_REGISTRY);
@@ -183,4 +193,5 @@ export const SCREENSAVER_WIDGETS = [
   { id: 'photos', label: 'Photos' },
   { id: 'wishes', label: 'Wishes' },
   { id: 'busTracking', label: 'Bus Tracker' },
+  { id: 'inventory', label: 'Stock' },
 ];

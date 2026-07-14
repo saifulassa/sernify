@@ -839,6 +839,7 @@ export const usersRelations = relations(users, ({ many }) => ({
   maintenanceCompletions: many(maintenanceCompletions),
   familyMessages: many(familyMessages),
   auditLogs: many(auditLogs),
+  inventoryItems: many(inventoryItems),
 }));
 
 export const calendarSourcesRelations = relations(calendarSources, ({ one, many }) => ({
@@ -1733,6 +1734,52 @@ export const weekendVisitsRelations = relations(weekendVisits, ({ one }) => ({
   }),
   visitedByUser: one(users, {
     fields: [weekendVisits.visitedBy],
+    references: [users.id],
+  }),
+}));
+
+// ============================================================================
+// INVENTORY / STOCK
+// ============================================================================
+
+export const inventoryItems = pgTable('inventory_items', {
+  id: uuid('id').defaultRandom().primaryKey(),
+
+  name: varchar('name', { length: 255 }).notNull(),
+
+  quantity: decimal('quantity', { precision: 10, scale: 2 }).default('0').notNull(),
+  unit: varchar('unit', { length: 50 }), // "kg", "liter", "pcs", etc.
+
+  category: varchar('category', { length: 50 }),
+
+  // Threshold — stock below this triggers low stock alert
+  minStock: decimal('min_stock', { precision: 10, scale: 2 }).default('0').notNull(),
+
+  // If imported from a shopping item
+  shoppingItemId: uuid('shopping_item_id')
+    .references(() => shoppingItems.id, { onDelete: 'set null' }),
+
+  addedBy: uuid('added_by').references(() => users.id, { onDelete: 'set null' }),
+
+  notes: text('notes'),
+
+  purchasedAt: timestamp('purchased_at'),
+
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+}, (table) => ({
+  categoryIdx: index('inventory_items_category_idx').on(table.category),
+  shoppingItemIdx: index('inventory_items_shopping_item_idx').on(table.shoppingItemId),
+  addedByIdx: index('inventory_items_added_by_idx').on(table.addedBy),
+}));
+
+export const inventoryItemsRelations = relations(inventoryItems, ({ one }) => ({
+  shoppingItem: one(shoppingItems, {
+    fields: [inventoryItems.shoppingItemId],
+    references: [shoppingItems.id],
+  }),
+  addedByUser: one(users, {
+    fields: [inventoryItems.addedBy],
     references: [users.id],
   }),
 }));

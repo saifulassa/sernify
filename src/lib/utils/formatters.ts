@@ -430,3 +430,40 @@ export function formatRecipeRow(row: {
     updatedAt: row.updatedAt.toISOString(),
   };
 }
+
+/**
+ * Format an inventory database row into an API response object.
+ */
+export function formatInventoryItemRow(row: {
+  id: string;
+  name: string;
+  quantity: string;
+  unit: string | null;
+  category: string | null;
+  minStock: string;
+  shoppingItemId: string | null;
+  addedById: string | null;
+  addedByName: string | null;
+  addedByColor: string | null;
+  notes: string | null;
+  purchasedAt: Date | null;
+  createdAt: Date;
+  updatedAt: Date;
+}) {
+  return {
+    id: row.id,
+    name: row.name,
+    quantity: parseFloat(row.quantity),
+    unit: row.unit,
+    category: row.category,
+    minStock: parseFloat(row.minStock),
+    shoppingItemId: row.shoppingItemId,
+    notes: row.notes,
+    purchasedAt: row.purchasedAt?.toISOString() || null,
+    addedBy: row.addedById
+      ? { id: row.addedById, name: row.addedByName!, color: row.addedByColor! }
+      : null,
+    createdAt: row.createdAt.toISOString(),
+    updatedAt: row.updatedAt.toISOString(),
+  };
+}

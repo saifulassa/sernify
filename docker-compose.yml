@@ -22,7 +22,6 @@ services:
       - "4003:3000"
     environment:
       - NODE_ENV=production
-      - DATABASE_URL=postgresql://sernify:***@db:5432/sernify
       - REDIS_URL=redis://redis:6379
       - NODE_OPTIONS=--dns-result-order=ipv4first
     env_file:

@@ -183,7 +183,7 @@ function buildLocationParam(loc: LocationParam): string {
  */
 export async function fetchCurrentWeather(
   location?: LocationParam,
-  units: WeatherUnits = { temperature: 'F', windSpeed: 'mph', precipitation: 'in' },
+  units: WeatherUnits = { temperature: 'C', windSpeed: 'km/h', precipitation: 'mm' },
 ): Promise<CurrentWeather & { locationName: string; sunrise: Date; sunset: Date }> {
   const config = await getConfig();
   const loc = location ?? config.location;
@@ -222,7 +222,7 @@ export async function fetchCurrentWeather(
  */
 async function fetchForecastRaw(
   location?: LocationParam,
-  units: WeatherUnits = { temperature: 'F', windSpeed: 'mph', precipitation: 'in' },
+  units: WeatherUnits = { temperature: 'C', windSpeed: 'km/h', precipitation: 'mm' },
 ): Promise<{
   forecast: ForecastDay[];
   raw: OpenWeatherForecast['list'];
@@ -406,7 +406,7 @@ export async function fetchWeatherData(
   location?: LocationParam,
   options?: WeatherOptions,
 ): Promise<WeatherData> {
-  const units: WeatherUnits = options?.units ?? { temperature: 'F', windSpeed: 'mph', precipitation: 'in' };
+  const units: WeatherUnits = options?.units ?? { temperature: 'C', windSpeed: 'km/h', precipitation: 'mm' };
   const [currentData, forecastData] = await Promise.all([
     fetchCurrentWeather(location, units),
     fetchForecastRaw(location, units),

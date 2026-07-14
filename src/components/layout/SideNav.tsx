@@ -26,7 +26,8 @@ import * as React from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { HelpCircle } from 'lucide-react';
+import { useTheme } from 'next-themes';
+import { HelpCircle, Sun, Moon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { SernifyIcon } from '@/components/ui/SernifyIcon';
 import { ALL_NAV_ITEMS } from '@/lib/constants/navItems';
@@ -74,6 +75,7 @@ export interface SideNavProps {
 export function SideNav({ user, onLogout, onLogin, uiHidden, className }: SideNavProps) {
   // Get current pathname for active state
   const pathname = usePathname();
+  const { theme, setTheme, resolvedTheme } = useTheme();
   const { filterNavItems } = useHiddenPages();
   const navItems = filterNavItems(ALL_NAV_ITEMS);
   const [expanded, setExpanded] = React.useState(false);
@@ -188,6 +190,26 @@ export function SideNav({ user, onLogout, onLogin, uiHidden, className }: SideNa
             <HelpCircle className="h-4 w-4 flex-shrink-0" />
             {expanded && <span>Help</span>}
           </Link>
+        </div>
+
+        {/* THEME TOGGLE */}
+        <div className={cn('px-2 pb-1', expanded ? 'text-left' : 'text-center')}>
+          <button
+            onClick={() => setTheme(resolvedTheme === 'dark' ? 'light' : 'dark')}
+            aria-label="Toggle theme"
+            className={cn(
+              'flex items-center gap-3 px-3 py-2 rounded-lg w-full text-sm transition-colors',
+              expanded ? 'justify-start' : 'justify-center',
+              'text-muted-foreground/50 hover:text-muted-foreground hover:bg-accent'
+            )}
+          >
+            {resolvedTheme === 'dark' ? (
+              <Sun className="h-4 w-4 flex-shrink-0" />
+            ) : (
+              <Moon className="h-4 w-4 flex-shrink-0" />
+            )}
+            {expanded && <span>{resolvedTheme === 'dark' ? 'Light mode' : 'Dark mode'}</span>}
+          </button>
         </div>
 
         {/* USER AVATAR AT BOTTOM */}
